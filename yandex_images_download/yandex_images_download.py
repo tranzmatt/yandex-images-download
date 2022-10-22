@@ -37,9 +37,12 @@ def scrap(args):
 
         if keywords:
             downloader_result = downloader.download_images(keywords)
-            total_errors += sum(
-                keyword_result.errors_count
-                for keyword_result in downloader_result.keyword_results)
+
+            # Checks to make sure it's a legit value
+            total_errors = 0
+            for keyword_result in downloader_result.keyword_results:
+                total_errors += int(keyword_result.errors_count) if keyword_result.errors_count else 0
+                
     finally:
         driver.quit()
         if args.num_workers:

@@ -30,7 +30,20 @@ DRIVER_NAME_TO_CLASS = {
 
 def get_driver(name: str, path: Optional[str]) -> Driver:
     driver_class = DRIVER_NAME_TO_CLASS[name]
-    args = {'executable_path': path} if path else {}
+
+    # My hardcodes for Chromedriver
+    if name == 'Chrome':
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.binary_location='/usr/bin/chromium-browser'
+        chrome_driver_binary = path if path else '/usr/bin/chromedriver'
+        args = { 'executable_path' : chrome_driver_binary, 'chrome_options' : chrome_options }
+        #driver = webdriver.Chrome('chromedriver', options=chrome_options,seleniumwire_options=options)
+        print(args)
+
+    else:
+        args = {'executable_path': path} if path else {}
 
     return driver_class(**args)
 
