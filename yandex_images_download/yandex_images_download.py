@@ -30,7 +30,7 @@ def scrap(args):
                                             args.exact_isize, args.iorient,
                                             args.extension, args.color,
                                             args.itype, args.commercial,
-                                            args.recent, pool)
+                                            args.recent, pool, args.similar_images)
 
         start_time = time.time()
         total_errors = 0
@@ -42,7 +42,7 @@ def scrap(args):
             total_errors = 0
             for keyword_result in downloader_result.keyword_results:
                 total_errors += int(keyword_result.errors_count) if keyword_result.errors_count else 0
-                
+
     finally:
         driver.quit()
         if args.num_workers:

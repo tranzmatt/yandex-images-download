@@ -11,6 +11,7 @@ import time
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
+from hashlib import md5
 from math import floor
 from seleniumwire import webdriver
 from typing import List, Union, Optional
@@ -213,7 +214,8 @@ class YandexImagesDownloader():
                  itype=None,
                  commercial=None,
                  recent=None,
-                 pool=None):
+                 pool=None,
+                 similar_images=False):
         self.driver = driver
         self.output_directory = pathlib.Path(output_directory)
         self.limit = limit
@@ -234,13 +236,18 @@ class YandexImagesDownloader():
         }
         self.cookies = {}
         self.pool = pool
+        self.similar_images = similar_images
 
         logging.info(f'Output directory is set to "{self.output_directory}/"')
         logging.info(f"Limit of images is set to {self.limit}")
 
     def get_response(self):
+        current_url = self.driver.current_url
+        if self.similar_images:
+            current_url = current_url.split("&cbir_id=")[0]
+
         pathes = [request.path for request in self.driver.requests]
-        request = self.driver.requests[pathes.index(self.driver.current_url)]
+        request = self.driver.requests[pathes.index(current_url)]
         return request.response
 
     def init_url_params(self):
@@ -266,7 +273,11 @@ class YandexImagesDownloader():
         return params
 
     def get_url_params(self, page, text):
-        params = {"p": page, "text": text}
+        if self.similar_images:
+            params = {"p": page, "url": text, "rpt": "imagelike"}
+        else:
+            params = {"p": page, "text": text}
+
         params.update(self.url_params)
 
         return params
@@ -285,7 +296,7 @@ class YandexImagesDownloader():
 
         response = self.get_response()
 
-        if not (response.reason == "OK"):
+        if not (response.reason.casefold() == "ok"):
             page_result.status = "fail"
             page_result.message = (f"Page response is not ok."
                                    f" page: {page},",
@@ -341,19 +352,27 @@ class YandexImagesDownloader():
                                        errors_count=None,
                                        page_results=[])
 
-        self.check_captcha_and_get(YandexImagesDownloader.MAIN_URL,
+        if self.similar_images:
                                    params={
-                                       'text': keyword,
+               "url": keyword,
+               "rpt": "imagelike"
+            }
+        else:
+            params={
+                "text": keyword,
                                        "nomisspell": 1
-                                   })
+           }
+
+        self.check_captcha_and_get(YandexImagesDownloader.MAIN_URL,
+                                   params=params)
         response = self.get_response()
 
-        if not (response.reason == "OK"):
-            keyword_result = "fail"
+        if not (response.reason.casefold() == "ok"):
+            keyword_result.status = "fail"
             keyword_result.message = (
                 "Failed to fetch a search page."
                 f" url: {YandexImagesDownloader.MAIN_URL},"
-                f" params: {{'text': {keyword}}},"
+                f" params: {params},"
                 f" status_code: {response.status_code}")
             return keyword_result
 
@@ -413,8 +432,13 @@ class YandexImagesDownloader():
         for keyword in keywords:
             logging.info(f"Downloading images for {keyword}...")
 
+            if self.similar_images:
+                sub_directory = md5(keyword.encode("utf-8")).hexdigest()
+            else:
+                sub_directory = keyword
+
             keyword_result = self.download_images_by_keyword(
-                keyword, sub_directory=keyword)
+                keyword, sub_directory=sub_directory)
             dowloader_result.keyword_results.append(keyword_result)
 
             logging.info(keyword_result.message)
