@@ -15,7 +15,7 @@ from hashlib import md5
 from math import floor
 from seleniumwire import webdriver
 from typing import List, Union, Optional
-from urllib.parse import urlparse, urlencode
+from urllib.parse import urlparse, urlencode, quote
 from urllib3.exceptions import SSLError, NewConnectionError
 
 Driver = Union[webdriver.Chrome, webdriver.Edge, 
@@ -41,6 +41,7 @@ def get_driver(name: str, path: Optional[str]) -> Driver:
         chrome_driver_binary = path if path else '/usr/bin/chromedriver'
         args = { 'executable_path' : chrome_driver_binary, 'chrome_options' : chrome_options }
         #driver = webdriver.Chrome('chromedriver', options=chrome_options,seleniumwire_options=options)
+
         print(args)
 
     else:
@@ -197,7 +198,7 @@ class YandexImagesDownloader():
     """Class to download images from yandex.ru
     """
 
-    MAIN_URL = "https://yandex.ru/images/search"
+    MAIN_URL = "https://yandex.com/images/search"
     MAXIMUM_PAGES_PER_SEARCH = 50
     MAXIMUM_IMAGES_PER_PAGE = 30
     MAXIMUM_FILENAME_LENGTH = 50
@@ -243,6 +244,7 @@ class YandexImagesDownloader():
 
     def get_response(self):
         current_url = self.driver.current_url
+
         if self.similar_images:
             current_url = current_url.split("&cbir_id=")[0]
 
@@ -346,6 +348,7 @@ class YandexImagesDownloader():
 
     def download_images_by_keyword(self, keyword,
                                    sub_directory="") -> KeywordResult:
+
         keyword_result = KeywordResult(status=None,
                                        message=None,
                                        keyword=keyword,
@@ -353,14 +356,14 @@ class YandexImagesDownloader():
                                        page_results=[])
 
         if self.similar_images:
-                                   params={
-               "url": keyword,
-               "rpt": "imagelike"
+            params={
+                "url": keyword,
+                "rpt": "imagelike"
             }
         else:
             params={
                 "text": keyword,
-                                       "nomisspell": 1
+                "nomisspell": 1
            }
 
         self.check_captcha_and_get(YandexImagesDownloader.MAIN_URL,
@@ -386,6 +389,7 @@ class YandexImagesDownloader():
             keyword_result.errors_count = 0
             logging.info(f"    {keyword_result.message}")
             return keyword_result
+
         serp_list = json.loads(tag_serp_list.attrs["data-bem"])["serp-list"]
         last_page = serp_list["lastPage"]
         actual_last_page = 1 + floor(
@@ -455,7 +459,7 @@ class YandexImagesDownloader():
         """Checking for captcha on url and get url after that.
         If there is captcha, you have to type it in input() or quit."""
 
-        url_with_params = f"{url}?{urlencode(params)}"
+        url_with_params = f"{url}?{urlencode(params, quote_via=quote)}"
 
         del self.driver.requests
         self.driver.get(url_with_params)
