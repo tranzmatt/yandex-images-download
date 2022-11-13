@@ -12,6 +12,12 @@ def parse_args():
                         type=str,
                         choices=list(DRIVER_NAME_TO_CLASS))
 
+    parser.add_argument("-p",
+                        "--proxy",
+                        help=("proxy for brower's WebDriver"),
+                        type=str,
+                        default=None)
+
     parser.add_argument("-dp",
                         "--driver-path",
                         help=("path to brower's WebDriver"),
@@ -81,12 +87,14 @@ def parse_args():
                         type=str,
                         default=None,
                         choices=["horizontal", "vertical", "square"])
+
     parser.add_argument(
         "--itype",
         help="image type",
         type=str,
         default=None,
         choices=["photo", "clipart", "lineart", "face", "demotivator"])
+
     parser.add_argument("--color",
                         help="filter on color",
                         type=str,

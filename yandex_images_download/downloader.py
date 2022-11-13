@@ -29,7 +29,7 @@ DRIVER_NAME_TO_CLASS = {
 }  # type: Dict[str, Driver]
 
 
-def get_driver(name: str, path: Optional[str]) -> Driver:
+def get_driver(name: str, proxy: str, path: Optional[str]) -> Driver:
     driver_class = DRIVER_NAME_TO_CLASS[name]
 
     # My hardcodes for Chromedriver
@@ -37,6 +37,8 @@ def get_driver(name: str, path: Optional[str]) -> Driver:
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
+        if proxy:
+            chrome_options.add_argument('--proxy-server=%s' % proxy)
         chrome_options.binary_location='/usr/bin/chromium-browser'
         chrome_driver_binary = path if path else '/usr/bin/chromedriver'
         args = { 'executable_path' : chrome_driver_binary, 'chrome_options' : chrome_options }
